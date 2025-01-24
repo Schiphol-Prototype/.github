@@ -21,8 +21,8 @@ jobs:
       - name: 'Build and Push Docker Image'
         run: |
           docker login ${{ secrets.REGISTRY_LOGIN_SERVER }} -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
-          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/$APP_NAME:${{ github.sha }}
-          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/$APP_NAME:${{ github.sha }}
+          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ vars.APP_NAME }}:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ vars.APP_NAME }}:${{ github.sha }}
 
       # Get SHA of the built image
       - name: 'Get Image SHA'
@@ -36,14 +36,14 @@ jobs:
       - name: 'Checkout GitOps Repository'
         uses: actions/checkout@v2
         with:
-          repository: $REPOSITORY
+          repository: ${{ vars.REPOSITORY }}
           ref: develop
           token: ${{ secrets.PRIVATE_PAT }}
 
       - name: 'Update Container SHA'
         run: |
           echo "Updating container SHA in GitOps repository"
-          sed -i 's|$APP_NAMe:[^ ]*|$APP_NAME:${{ needs.build-and-push.outputs.sha }}|g' $FILE_PATH
+          sed -i 's|${{ vars.APP_NAME }}:[^ ]*|${{ vars.APP_NAME }}:${{ needs.build-and-push.outputs.sha }}|g' ${{ vars.FILE_PATH }}
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add .
