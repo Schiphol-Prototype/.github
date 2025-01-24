@@ -1,0 +1,51 @@
+on: [push]
+name: GitOps_Workflow
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.get-sha.outputs.sha }}
+    steps:
+      # Checkout the repository
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v2
+
+      # Login to Azure
+      - name: 'Login to Azure'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Build and push Docker image
+      - name: 'Build and Push Docker Image'
+        run: |
+          docker login ${{ secrets.REGISTRY_LOGIN_SERVER }} -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
+          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/$APP_NAME:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/myapp:${{ github.sha }}
+
+      # Get SHA of the built image
+      - name: 'Get Image SHA'
+        id: get-sha
+        run: echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  update-gitops:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: 'Checkout GitOps Repository'
+        uses: actions/checkout@v2
+        with:
+          repository: $REPOSITORY
+          ref: develop
+          token: ${{ secrets.PRIVATE_PAT }}
+
+      - name: 'Update Container SHA'
+        run: |
+          echo "Updating container SHA in GitOps repository"
+          sed -i 's|myapp:[^ ]*|$APP_NAME:${{ needs.build-and-push.outputs.sha }}|g' $FILE_PATH
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add .
+          git commit -m "Update container SHA to ${{ needs.build-and-push.outputs.sha }}"
+          git push origin <GITOPS_BRANCH>
