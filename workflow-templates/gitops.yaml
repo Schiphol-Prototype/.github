@@ -43,9 +43,9 @@ jobs:
       - name: 'Update Container SHA'
         run: |
           echo "Updating container SHA in GitOps repository"
-          sed -i 's|myapp:[^ ]*|$APP_NAME:${{ needs.build-and-push.outputs.sha }}|g' $FILE_PATH
+          sed -i 's|$APP_NAMe:[^ ]*|$APP_NAME:${{ needs.build-and-push.outputs.sha }}|g' $FILE_PATH
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add .
           git commit -m "Update container SHA to ${{ needs.build-and-push.outputs.sha }}"
-          git push origin <GITOPS_BRANCH>
+          git push origin develop
