@@ -1,0 +1,8 @@
+{
+    "name": "Schiphol GitOps Workflow",
+    "description": "Schiphol CI workflow template.",
+    "iconName": "example-icon",
+    "categories": [
+        "Deployment"
+    ]
+}
